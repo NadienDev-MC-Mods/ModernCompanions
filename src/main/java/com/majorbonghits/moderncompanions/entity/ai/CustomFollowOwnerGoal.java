@@ -2,9 +2,11 @@ package com.majorbonghits.moderncompanions.entity.ai;
 
 import com.majorbonghits.moderncompanions.entity.AbstractHumanCompanionEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.Goal;
 
+import java.lang.reflect.Method;
 import java.util.EnumSet;
 
 /**
@@ -14,6 +16,7 @@ public class CustomFollowOwnerGoal extends Goal {
     private static final double TELEPORT_DISTANCE_SQ = 35.0D * 35.0D; // Companion snaps back once ~35 blocks away.
     private static final int TELEPORT_ATTEMPTS = 10;
     private static final int TELEPORT_RANGE = 3;
+    private static final double LONG_DISTANCE_THRESHOLD_SQ = 128.0D * 128.0D;
 
     private final AbstractHumanCompanionEntity companion;
     private final double speedModifier;
@@ -22,6 +25,22 @@ public class CustomFollowOwnerGoal extends Goal {
     private final boolean teleport;
     private LivingEntity owner;
     private int timeToRecalc;
+
+    private static Method chunkMapRemoveEntity = null;
+    private static Method chunkMapAddEntity    = null;
+
+    static {
+        try {
+            Class<?> chunkMapClass = Class.forName("net.minecraft.server.level.ChunkMap");
+            chunkMapRemoveEntity = chunkMapClass.getDeclaredMethod("removeEntity", net.minecraft.world.entity.Entity.class);
+            chunkMapRemoveEntity.setAccessible(true);
+            chunkMapAddEntity = chunkMapClass.getDeclaredMethod("addEntity", net.minecraft.world.entity.Entity.class);
+            chunkMapAddEntity.setAccessible(true);
+        } catch (Exception e) {
+            chunkMapRemoveEntity = null;
+            chunkMapAddEntity    = null;
+        }
+    }
 
     public CustomFollowOwnerGoal(AbstractHumanCompanionEntity companion, double speed, float startDist, float stopDist, boolean teleport) {
         this.companion = companion;
@@ -80,8 +99,11 @@ public class CustomFollowOwnerGoal extends Goal {
             timeToRecalc = 10;
             double distanceSq = companion.distanceToSqr(owner);
             if (distanceSq >= TELEPORT_DISTANCE_SQ && teleport) {
+                boolean isLongDistance = distanceSq >= LONG_DISTANCE_THRESHOLD_SQ;
                 if (!tryTeleportCloseToOwner()) {
                     companion.getNavigation().moveTo(owner, speedModifier); // Fallback if no safe spot found.
+                } else if (isLongDistance && companion.level() instanceof ServerLevel serverLevel) {
+                    forceRetrackEntity(serverLevel);
                 }
             } else {
                 companion.getNavigation().moveTo(owner, speedModifier);
@@ -118,5 +140,14 @@ public class CustomFollowOwnerGoal extends Goal {
 
     private int randomBetween(int min, int max) {
         return companion.getRandom().nextInt(max - min + 1) + min;
+    }
+
+    private void forceRetrackEntity(ServerLevel serverLevel) {
+        if (chunkMapRemoveEntity == null || chunkMapAddEntity == null) return;
+        try {
+            var chunkMap = serverLevel.getChunkSource().chunkMap;
+            chunkMapRemoveEntity.invoke(chunkMap, companion);
+            chunkMapAddEntity.invoke(chunkMap, companion);
+        } catch (Exception ignored) {}
     }
 }

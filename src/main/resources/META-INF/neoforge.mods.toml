@@ -5,30 +5,57 @@ issueTrackerURL = "https://github.com/MajorBonghits/ModernCompanions/issues"
 
 [[mods]]
 modId = "${mod_id}"
-version = "${version}"
+version = "${mod_version}"
 displayName = "${mod_name}"
 authors = "${mod_author}; original: justinwon777"
-description = '''
-Modern Companions is a NeoForge 1.21.1 port and rebrand of the Human Companions mod. All original companion gameplay, entities, and structures will be brought forward while preserving attribution and GPL-3.0 licensing.
-'''
+description = "${description}"
+
 
 [[dependencies.${mod_id}]]
 modId = "neoforge"
 type = "required"
-versionRange = "[${neo_version},)"
+versionRange = "${neo_version}"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.${mod_id}]]
 modId = "minecraft"
 type = "required"
-versionRange = "[${minecraft_version},1.22)"
+versionRange = "${minecraft_version}"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.${mod_id}]]
 modId = "curios"
 type = "optional"
-versionRange = "[9.5.0,)"
+versionRange = "${curios_version}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "waystones"
+type = "optional"
+versionRange = "${waystones_file_version_id}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "wthit"
+type = "optional"
+versionRange = "${wthit_version}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "balm"
+type = "optional"
+versionRange = "${balm_file_version_id}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "badpackets"
+type = "optional"
+versionRange = "${badpackets_version}"
 ordering = "NONE"
 side = "BOTH"
